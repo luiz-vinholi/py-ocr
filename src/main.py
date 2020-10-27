@@ -2,48 +2,40 @@ import pytesseract as tesseract
 
 from pytesseract import Output
 
-from handlers.image import Image
+from services.image_service import ImageService
+from services.ocr_service import OCRService
 
 
 def main():
-    image = Image('./src/images/cpfl.jpeg').treat()
+    image = ImageService('./src/images/cpfl.jpeg').treat()
 
-    data = tesseract.image_to_data(
-        image.treated_image,
-        lang='por',
-        output_type=Output.DICT,
-    )
+    ocr = OCRService(image.treated_image)
 
-    texts_data = [
+    ocr.get_data_from_keywords([
         {
-            'top': data['top'][index],
-            'left': data['left'][index],
-            'width': data['width'][index],
-            'height': data['height'][index],
-            'confidence': data['conf'][index],
-            'text': data['text'][index],
-        } for index, text in enumerate(data['text'])
-        if text.strip() and text == 'TOTAL'
-    ]
+            'key': 'TOTAL',
+            'regex': '[tl1/|][0o][tl1/|][a4][l1|]',
+            'value_type': float,
+        }
+    ])
 
-    for text_data in texts_data:
-        areas = (
-            text_data['left'],
-            text_data['top'],
-            text_data['left'] + text_data['width'],
-            text_data['top'] + text_data['height'] + 20,
-        )
+    # TODO - Crop image and get data values
+    # for text_data in ocr.data:
+    #     areas = (
+    #         text_data['left'],
+    #         text_data['top'],
+    #         text_data['left'] + text_data['width'],
+    #         text_data['top'] + text_data['height'],
+    #     )
 
-        cropped_image = image.this_image.crop(areas)
-        cropped_image.save('./src/images/cropped-cpfl.jpeg')
-        data = tesseract.image_to_data(
-            cropped_image,
-            lang='por',
-            output_type=Output.DICT,
-        )
-        print(data)
-
-    print(texts_data)
+    #     cropped_image = image.original_image.crop(areas)
+    #     cropped_image.save('./src/images/cropped-cpfl.jpeg')
+    #     data = tesseract.image_to_data(
+    #         cropped_image,
+    #         lang='por',
+    #         output_type=Output.DICT,
+    #     )
+    #     print(data)
 
 
 if __name__ == '__main__':
